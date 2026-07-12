@@ -1,27 +1,37 @@
-const notFound = (req, res, next) => {
-  const error = new Error(
-    `Route Not Found - ${req.originalUrl}`
-  );
+const AppError = require("../errors/AppError");
 
-  res.status(404);
+// =============================
+// Route Not Found
+// =============================
+const notFound = (req, res, next) => {
+  const error = new AppError(
+    `Route Not Found - ${req.originalUrl}`,
+    404
+  );
 
   next(error);
 };
 
+// =============================
+// Global Error Handler
+// =============================
 const errorHandler = (
   err,
   req,
   res,
   next
 ) => {
-  let statusCode =
-    res.statusCode === 200
-      ? 500
-      : res.statusCode;
+
+  let statusCode = err.statusCode || 500;
+
+  let message =
+    err.message || "Internal Server Error";
 
   res.status(statusCode).json({
     success: false,
-    message: err.message,
+
+    message,
+
     stack:
       process.env.NODE_ENV === "production"
         ? null
