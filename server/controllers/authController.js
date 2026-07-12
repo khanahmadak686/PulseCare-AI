@@ -1,11 +1,13 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const Otp = require("../models/Otp");
+
 const generateToken = require("../utils/generateToken");
 const asyncHandler = require("../utils/asyncHandler");
 
-// ===============================
+// =========================================
 // Register User
-// ===============================
+// =========================================
 const registerUser = asyncHandler(async (req, res) => {
   const {
     name,
@@ -17,20 +19,56 @@ const registerUser = asyncHandler(async (req, res) => {
     role,
   } = req.body;
 
+  // Required Fields
   if (!name || !email || !password) {
-    res.status(400);
-    throw new Error("Please fill all required fields");
+    return res.status(400).json({
+      success: false,
+      message: "Please fill all required fields",
+    });
   }
 
+  // User Already Exists
   const userExists = await User.findOne({ email });
 
   if (userExists) {
-    res.status(400);
-    throw new Error("User already exists");
+    return res.status(400).json({
+      success: false,
+      message: "User already exists",
+    });
   }
 
+  // OTP Check
+  const otpRecord = await Otp.findOne({ email });
+
+  if (!otpRecord) {
+    return res.status(400).json({
+      success: false,
+      message: "Please verify your email first.",
+    });
+  }
+
+  // OTP Expired
+  if (otpRecord.expiresAt < new Date()) {
+    await Otp.deleteOne({ _id: otpRecord._id });
+
+    return res.status(400).json({
+      success: false,
+      message: "OTP expired. Please request a new OTP.",
+    });
+  }
+
+  // OTP Verified?
+  if (!otpRecord.verified) {
+    return res.status(400).json({
+      success: false,
+      message: "Please verify OTP before registration.",
+    });
+  }
+
+  // Hash Password
   const hashedPassword = await bcrypt.hash(password, 10);
 
+  // Create User
   const user = await User.create({
     name,
     email,
@@ -40,6 +78,9 @@ const registerUser = asyncHandler(async (req, res) => {
     dateOfBirth,
     role: role || "patient",
   });
+
+  // Delete OTP after successful registration
+  await Otp.deleteOne({ _id: otpRecord._id });
 
   res.status(201).json({
     success: true,
@@ -54,22 +95,26 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 });
 
-// ===============================
+// =========================================
 // Login User
-// ===============================
+// =========================================
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    res.status(400);
-    throw new Error("Email and Password are required");
+    return res.status(400).json({
+      success: false,
+      message: "Email and Password are required",
+    });
   }
 
   const user = await User.findOne({ email });
 
   if (!user) {
-    res.status(401);
-    throw new Error("Invalid Email or Password");
+    return res.status(401).json({
+      success: false,
+      message: "Invalid Email or Password",
+    });
   }
 
   const isMatch = await bcrypt.compare(
@@ -78,8 +123,10 @@ const loginUser = asyncHandler(async (req, res) => {
   );
 
   if (!isMatch) {
-    res.status(401);
-    throw new Error("Invalid Email or Password");
+    return res.status(401).json({
+      success: false,
+      message: "Invalid Email or Password",
+    });
   }
 
   res.status(200).json({
@@ -96,9 +143,9 @@ const loginUser = asyncHandler(async (req, res) => {
   });
 });
 
-// ===============================
+// =========================================
 // Get Logged In User
-// ===============================
+// =========================================
 const getProfile = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
