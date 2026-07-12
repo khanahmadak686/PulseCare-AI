@@ -1,5 +1,8 @@
-const { body } = require("express-validator");
+const { body, validationResult } = require("express-validator");
 
+// ===============================
+// Register Validation
+// ===============================
 const registerValidator = [
   body("name")
     .trim()
@@ -11,7 +14,7 @@ const registerValidator = [
   body("email")
     .trim()
     .isEmail()
-    .withMessage("Valid email is required")
+    .withMessage("Enter a valid email")
     .normalizeEmail(),
 
   body("password")
@@ -21,7 +24,7 @@ const registerValidator = [
   body("phone")
     .optional()
     .isMobilePhone("en-IN")
-    .withMessage("Invalid Indian phone number"),
+    .withMessage("Invalid phone number"),
 
   body("role")
     .optional()
@@ -29,17 +32,37 @@ const registerValidator = [
     .withMessage("Invalid role"),
 ];
 
+// ===============================
+// Login Validation
+// ===============================
 const loginValidator = [
   body("email")
     .isEmail()
-    .withMessage("Valid email is required"),
+    .withMessage("Valid email required"),
 
   body("password")
     .notEmpty()
     .withMessage("Password is required"),
 ];
 
+// ===============================
+// Validation Middleware
+// ===============================
+const validate = (req, res, next) => {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      errors: errors.array(),
+    });
+  }
+
+  next();
+};
+
 module.exports = {
   registerValidator,
   loginValidator,
+  validate,
 };
