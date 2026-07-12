@@ -9,6 +9,7 @@ const apiResponse = (
     success,
     message,
     data,
+    timestamp: new Date().toISOString(),
   });
 };
 
