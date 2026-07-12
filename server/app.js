@@ -9,6 +9,7 @@ const authRoutes = require("./routes/authRoutes");
 const doctorRoutes = require("./routes/doctorRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
 const otpRoutes = require("./routes/otpRoutes");
+const passwordRoutes = require("./routes/passwordRoutes");
 
 const {
   notFound,
@@ -78,6 +79,8 @@ app.use("/api/doctors", doctorRoutes);
 app.use("/api/appointments", appointmentRoutes);
 
 app.use("/api/otp", otpRoutes);
+
+app.use("/api/auth", passwordRoutes);
 
 // ===============================
 // Error Middleware
