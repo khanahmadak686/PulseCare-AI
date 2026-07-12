@@ -8,16 +8,27 @@ const {
 } = require("../controllers/authController");
 
 const protect = require("../middleware/authMiddleware");
+const validate = require("../middleware/validateMiddleware");
 
-router.get("/test", (req, res) => {
-  res.json({
-    success: true,
-    message: "Auth Route Working",
-  });
-});
+const {
+  registerValidator,
+  loginValidator,
+} = require("../validators/authValidator");
 
-router.post("/register", registerUser);
-router.post("/login", loginUser);
+router.post(
+  "/register",
+  registerValidator,
+  validate,
+  registerUser
+);
+
+router.post(
+  "/login",
+  loginValidator,
+  validate,
+  loginUser
+);
+
 router.get("/profile", protect, getProfile);
 
 module.exports = router;
